@@ -5272,6 +5272,14 @@ public class PlanFragmentTest extends PlanTestBase {
         Assert.assertTrue(plan.contains("PREDICATES: 20: tt = '123', " +
                 "CAST(20: tt != 'ax' AS BIGINT) = 14: td, 14: td = 1"));
     }
+
+    @Test
+    public void testSubqueryLimit() throws Exception {
+        String sql = "select * from t0 where 2 = (select v4 from t1 limit 1);";
+        String plan = getFragmentPlan(sql);
+        Assert.assertTrue(plan.contains("  4:ASSERT NUMBER OF ROWS\n" +
+                "  |  assert number of rows: LE 1"));
+    }
     
     @Test
     public void testEqStringCast() throws Exception {
@@ -5323,5 +5331,21 @@ public class PlanFragmentTest extends PlanTestBase {
         Assert.assertTrue(plan.contains(" 1:Project\n" +
                 "  |  output columns:\n" +
                 "  |  11 <-> day[([2: id_datetime, DATETIME, false]); args: DATETIME; result: TINYINT; args nullable: false; result nullable: false]"));
+    }
+
+    @Test
+    public void testEqDoubleCast() throws Exception {
+        String sql = "select 'a' = t1e from test_all_type";
+        String plan = getFragmentPlan(sql);
+        System.out.println(plan);
+        Assert.assertTrue(plan.contains("CAST(5: t1e AS DOUBLE) = CAST('a' AS DOUBLE)\n"));
+    }
+
+    @Test
+    public void testNotEqStringCast() throws Exception {
+        String sql = "select 'a' != v1 from t0";
+        String plan = getFragmentPlan(sql);
+        System.out.println(plan);
+        Assert.assertTrue(plan.contains("CAST(1: v1 AS VARCHAR(1048576)) != 'a'\n"));
     }
 }
